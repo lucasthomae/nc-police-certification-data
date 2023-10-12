@@ -2,7 +2,7 @@
 
 The [Wandering Officer article](https://www.yalelawjournal.org/article/the-wandering-officer) published in the Yale Law Journal by Ben Grunwald and John Rappaport in April 2020 defines wandering officers as "law-enforcement officers fired by one department, sometimes for serious misconduct, who then find work at another agency."
 
-Earlier this year, we obtained a dataset from the North Carolina Department of Justice that tracks actions taken on N.C. police officer's certifications going back to 1973, when this data collection started.
+Earlier this year, we obtained a data set from the North Carolina Department of Justice that tracks actions taken on N.C. police officer's certifications going back to 1973, when this data collection started.
 
 It is our goal to identify wandering officers in North Carolina.
 
