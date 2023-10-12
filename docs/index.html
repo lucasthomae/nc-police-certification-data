@@ -368,7 +368,26 @@ Department of Justice that tracks actions taken on N.C. police officer’s
 certifications going back to 1973, when this data collection
 started.</p>
 <p>It is our goal to identify wandering officers in North Carolina.</p>
-<pre class="r"><code>nc_cert &lt;- readxl::read_xlsx(&quot;~/Documents/Fall 2023/Ind. Study/NC_Police_Cert_Request_Data.xlsx&quot;)</code></pre>
+<p>Below are the column names in the data set and the first six
+rows:</p>
+<pre class="r"><code>colnames(nc_cert)</code></pre>
+<pre><code>##  [1] &quot;NAME&quot;                &quot;ACADEMYID&quot;           &quot;CERTIFICATIONTYPE&quot;  
+##  [4] &quot;CERTIFICATION&quot;       &quot;ISSUED&quot;              &quot;CURRENTCERTSTATUS&quot;  
+##  [7] &quot;AGENCYORI&quot;           &quot;ACTIONTYPE&quot;          &quot;ACTIONEFFECTIVEDATE&quot;
+## [10] &quot;ACTIONSTATUS&quot;        &quot;TITLE&quot;</code></pre>
+<pre class="r"><code>head(nc_cert)</code></pre>
+<pre><code>## # A tibble: 6 × 11
+##   NAME             ACADEMYID CERTIFICATIONTYPE CERTIFICATION ISSUED             
+##   &lt;chr&gt;            &lt;chr&gt;     &lt;chr&gt;             &lt;chr&gt;         &lt;dttm&gt;             
+## 1 Eller, Shawn T   9484-8445 SS Deputy Sherif… Sampson Coun… 2022-11-08 00:00:00
+## 2 Slape, James Do… 0020-0471 SS Deputy Sherif… Lincoln Coun… 2023-05-05 00:00:00
+## 3 Love, Jermaine D 7916-6672 SS Deputy Sherif… Cumberland C… 2023-05-17 00:00:00
+## 4 Reed, Patrick    7327-7092 SS Deputy Sherif… Cumberland C… 2023-05-09 00:00:00
+## 5 Albert, Andrew … 0012-5556 SS Deputy Sherif… Franklin Cou… 2023-04-17 00:00:00
+## 6 Brown, Emory Th… 0011-3781 SS Deputy Sherif… Sampson Coun… 2023-01-25 00:00:00
+## # ℹ 6 more variables: CURRENTCERTSTATUS &lt;chr&gt;, AGENCYORI &lt;chr&gt;,
+## #   ACTIONTYPE &lt;chr&gt;, ACTIONEFFECTIVEDATE &lt;dttm&gt;, ACTIONSTATUS &lt;chr&gt;,
+## #   TITLE &lt;chr&gt;</code></pre>
 <p>This is a check to see if <code>ACADEMYID</code> is a unique
 identifier for each officer in the data set.</p>
 <pre class="r"><code>length(unique(nc_cert$ACADEMYID))</code></pre>

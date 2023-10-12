@@ -14,11 +14,16 @@ It is our goal to identify wandering officers in North Carolina.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-```
-
-```{r}
 nc_cert <- readxl::read_xlsx("~/Documents/nc-police-certification-data/data/NC_Police_Cert_Request_Data.xlsx")
 ```
+
+Below are the column names in the data set and the first six rows:
+
+```{r}
+colnames(nc_cert)
+head(nc_cert)
+```
+
 
 This is a check to see if `ACADEMYID` is a unique identifier for each officer in the data set.
 
