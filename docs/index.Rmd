@@ -1,0 +1,144 @@
+---
+title: "N.C. Police Certification Initial Data Exploration"
+author: "Lucas Thomae"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+The [Wandering Officer article](https://www.yalelawjournal.org/article/the-wandering-officer) published in the Yale Law Journal by Ben Grunwald and John Rappaport in April 2020 defines wandering officers as "law-enforcement officers fired by one department, sometimes for serious misconduct, who then find work at another agency."
+
+Earlier this year, we obtained a dataset from the North Carolina Department of Justice that tracks actions taken on N.C. police officer's certifications going back to 1973, when this data collection started.
+
+It is our goal to identify wandering officers in North Carolina.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+nc_cert <- readxl::read_xlsx("~/Documents/nc-police-certification-data/data/NC_Police_Cert_Request_Data.xlsx")
+```
+
+This is a check to see if `ACADEMYID` is a unique identifier for each officer in the data set.
+
+```{r}
+length(unique(nc_cert$ACADEMYID))
+length(unique(nc_cert$NAME))
+```
+
+This checks out. `ACADEMYID` has 158 more unique values because of some repeat names. For my analysis purposes going forward, I will use `ACADEMYID` for cleaning the data.
+
+Now, I'll make a dataframe containing only active officers. `nc_active` will contain active officers and all of the actions taken on their certifications. `nc_active_officers` keeps only the latest action row for each officer, so that we can count the number of current active officers in North Carolina that appear in the data set.
+
+```{r}
+nc_active <-
+  nc_cert %>%
+  group_by(ACADEMYID) %>% #grouping by individuals
+  filter(!any(grepl("(Inactive)", CURRENTCERTSTATUS, ignore.case = F))) %>% #removing all rows with individuals whose certification was inactive at the time of the data pull.
+  ungroup()
+
+nc_active_officers <-
+  nc_active %>%
+  arrange(desc(ACTIONEFFECTIVEDATE)) %>% #arranging the data by most recent date
+  group_by(ACADEMYID) %>% #grouping by individuals
+  slice(1) %>% #keeping only the row with the most recent action date for all individuals
+  ungroup()
+```
+
+nc_current_active has a length of 18,341 — meaning that there are 18,341 law enforcement officers in the data whose certifications were active at the time of the data pull. The [2018 Census of State and Local Law Enforcement Agencies](https://bjs.ojp.gov/sites/g/files/xyckuh236/files/media/document/csllea18st.pdf) reported that there were 25,557 sworn law enforcement officers in North Carolina, meaning that ~7,000 sworn law enforcement officers aren't accounted for in this data.
+
+While law enforcement agencies across the nation have experienced staff shortages since 2020, a survey from the [Police Executive Research Forum](https://www.policeforum.org/staffing2023) estimated that overall officer-staffing levels decreased by about 5% over the past three years. Therefore, we wouldn't expect for staffing shortages to account for all of the ~7,000 officer difference between the data and the 2018 census.
+
+Now, I'll use `nc_active_officers` to count the number of officers in each agency.
+
+```{r}
+nc_active_officers %>%
+  group_by(CERTIFICATION) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+```
+
+This looks pretty clean. Just as we'd expect, the Charlotte-Mecklenburg Police Department is by far the largest agency in the data, followed by the NC State Highway Patrol. There are 514 agencies in the data, and the 2018 census counted 516 agencies. That small difference could be the result of agencies shutting down or merging with other agencies, or perhaps some agencies that were counted in the census are not included in this data.
+
+Now, I want to start examining individual officers in the data. A starting hypothesis of mine is that officers with many actions in the data and who have been with many different departments deserve a more scrutinous eye when looking for 'wandering officers'.
+
+I'll use `group_by()` and `summarize()` to count the number of actions taken on each officer's certification and also count the number of departments they've been with. Since certifications in North Carolina are tied to the specifc agency that officers are employed by, we can use the CERTIFCATION column to count the departments.
+
+```{r}
+nc_active %>%
+  group_by(ACADEMYID) %>%
+  summarize(actions = n(),
+            departments = length(unique(CERTIFICATION))) %>%
+  arrange(desc(actions))
+```
+
+The above dataframe captures all 18,341 active officers in the cleaned data. To narrow that down, I'll filter `nc_active` to only include active officers who at one point have had an inactive certification at some point in their employment history. That would include officers who've had their `ACTIONSTATUS` marked as "Denied", "Separated", "Pending Inactive" or "Suspended".
+
+```{r}
+currentactive_inactives <- 
+nc_active %>%
+  group_by(ACADEMYID) %>%
+  filter(any(grepl("(Inactive)", ACTIONSTATUS, ignore.case = F)))
+
+currentactive_inactives %>%
+  group_by(ACADEMYID) %>%
+  summarize(actions = n(),
+            departments = length(unique(CERTIFICATION))) %>%
+  arrange(desc(actions))
+  
+```
+
+Now I'll repeat this process, but filter by specific `ACTIONSTATUS` values like "Pending Inactive" or "Suspended".
+
+```{r}
+currentactive_suspended <- 
+nc_active %>%
+  group_by(ACADEMYID) %>%
+  filter(any(grepl("Pending Inactive", ACTIONSTATUS, ignore.case = F)))
+
+currentactive_suspended %>%
+  group_by(ACADEMYID) %>%
+  summarize(actions = n(),
+            departments = length(unique(CERTIFICATION))) %>%
+  arrange(desc(actions))
+```
+
+Finally, I can examine the specific histories of individual officers that I'm interested in exploring. Here, I look at the history of Michael Goubran Brooks, who worked as a sheriff's deputy with the Caswell County Sheriff's Office (certification issued in 2021) and an officer at the Apex Police Department (certification issued in 2023).
+
+My best interpretation of this case is that Brooks left the Caswell County Sheriff's Office in February 2023 and joined the Apex Police Department in March, and now he has a probationary status on his LEO certification. A [Facebook post](https://www.facebook.com/profile/100064702295198/search/?q=brooks) from June 9, 2023 confirms that Brooks joined the department from another agency. There's nothing that signals to me that there's any disciplinary red flags in Brooks' history.
+
+```{r}
+nc_active %>%
+  filter(ACADEMYID == "9693-9109") %>%
+  arrange(ACTIONEFFECTIVEDATE) %>%
+  select(NAME, CERTIFICATION, ACTIONSTATUS, ACTIONEFFECTIVEDATE)
+```
+
+I'll explore another active officer who's had their certification suspended in the past.
+
+```{r}
+currentactive_suspended <- 
+nc_active %>%
+  group_by(ACADEMYID) %>%
+  filter(any(grepl("Suspended", ACTIONSTATUS, ignore.case = F)))
+
+currentactive_suspended %>%
+  group_by(ACADEMYID) %>%
+  summarize(actions = n(),
+            departments = length(unique(CERTIFICATION))) %>%
+  arrange(desc(actions))
+```
+
+There's only one officer in the data with an active certification who's had their certification suspended and has been at more than one department. That would be Donald Neal Hall of the Durham Police Department and the Granville County Sheriff's Office.
+
+Hall's certification with the Durham PD was suspended in 2008 and returned to a "General (Active)" status one year later. That was the last action on his certification captured in the data. He did not move to a different agency after the suspension, and does not meet the definition of a wandering officer.
+
+```{r}
+nc_active %>%
+  filter(ACADEMYID == "0051-2917") %>%
+  arrange(ACTIONEFFECTIVEDATE) %>%
+  select(NAME, CERTIFICATION, ACTIONSTATUS, ACTIONEFFECTIVEDATE)
+```
+
+From what I can tell, there's no signal in this data that shows when a currently active officer has had disciplinary action taken against them. To proceed, we may need additional data that tells us when an officer has been fired or disciplined in some other way by their agency. 
