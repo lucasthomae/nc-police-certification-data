@@ -97,12 +97,12 @@ currentactive_inactives %>%
 Now I'll repeat this process, but filter by specific `ACTIONSTATUS` values like "Pending Inactive" or "Suspended".
 
 ```{r}
-currentactive_suspended <- 
+currentactive_pending <- 
 nc_active %>%
   group_by(ACADEMYID) %>%
   filter(any(grepl("Pending Inactive", ACTIONSTATUS, ignore.case = F)))
 
-currentactive_suspended %>%
+currentactive_pending %>%
   group_by(ACADEMYID) %>%
   summarize(actions = n(),
             departments = length(unique(CERTIFICATION))) %>%
